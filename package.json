@@ -1,0 +1,16 @@
+{
+  "name": "airline-irregular-notification",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Hiroto Kitazawa <hiroxto@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@slack/web-api": "^7.8.0",
+    "cheerio": "^1.0.0"
+  }
+}

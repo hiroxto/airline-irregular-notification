@@ -83,7 +83,7 @@ function getUpdateTime(html: string): string {
 }
 
 function formatMessage(flightInfos: FlightInfo[], updateTime: string): { text: string; blocks: (Block | KnownBlock)[] } {
-    const headerText = '*特別な取り扱いの一覧*\n';
+    const headerText = '*特別な取り扱いの一覧 / ANA* @here\n';
     const blocks: (Block | KnownBlock)[] = [
         {
             type: 'section',

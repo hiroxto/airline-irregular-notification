@@ -11,6 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "@slack/web-api": "^7.8.0",
-    "cheerio": "^1.0.0"
+    "cheerio": "^1.0.0",
+    "commander": "^13.1.0"
   }
 }

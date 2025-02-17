@@ -144,7 +144,7 @@ function formatMessage(flightInfos: FlightInfo[], updateTime: string): { text: s
     };
 }
 
-async function postToSlack(message: { text: string; blocks: (Block | KnownBlock)[] }): Promise<void> {
+async function postToSlack(message: { text: string; blocks: (Block | KnownBlock)[] }, options: { username?: string; icon?: string }): Promise<void> {
     const slack = new WebClient(SLACK_TOKEN);
     assert(SLACK_TOKEN && SLACK_CHANNEL);
 
@@ -153,8 +153,8 @@ async function postToSlack(message: { text: string; blocks: (Block | KnownBlock)
         text: message.text,
         blocks: message.blocks,
         mrkdwn: true,
-        username: '橙釦',
-        icon_emoji: ':ana:'
+        username: options.username ?? '橙釦',
+        icon_emoji: options.icon ?? ':ana:'
     });
 
     if (!result.ok) {
@@ -173,7 +173,9 @@ async function main() {
     program
         .command('ana')
         .description('ANAの運航情報を取得してSlackに通知します')
-        .action(async () => {
+        .option('--icon <emoji>', 'Slackに投稿する際のアイコン絵文字', ':ana:')
+        .option('--username <name>', 'Slackに投稿する際のユーザー名', 'ANA運航情報')
+        .action(async (options) => {
             try {
                 const html = await fetchHTML(ANA_URL);
 
@@ -185,7 +187,10 @@ async function main() {
                 const flightInfos = parseIrregularFlights(html);
                 const updateTime = getUpdateTime(html);
                 const message = formatMessage(flightInfos, updateTime);
-                await postToSlack(message);
+                await postToSlack(message, {
+                    icon: options.icon,
+                    username: options.username
+                });
 
                 console.log('Successfully posted irregular flight information to Slack');
             } catch (error) {

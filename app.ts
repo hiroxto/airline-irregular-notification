@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import { WebClient } from '@slack/web-api';
 import assert from 'assert';
 import type { Block, KnownBlock } from '@slack/web-api';
+import { Command } from 'commander';
 
 const SLACK_TOKEN = process.env.SLACK_TOKEN;
 const SLACK_CHANNEL = process.env.SLACK_CHANNEL;
@@ -162,24 +163,38 @@ async function postToSlack(message: { text: string; blocks: (Block | KnownBlock)
 }
 
 async function main() {
-    try {
-        const html = await fetchHTML(ANA_URL);
+    const program = new Command();
 
-        if (!hasIrregularFlights(html)) {
-            console.log('No irregular flights found');
-            return;
-        }
+    program
+        .name('airline-irregular-notification')
+        .description('航空会社の運航情報を取得してSlackに通知するCLIツール')
+        .version('1.0.0');
 
-        const flightInfos = parseIrregularFlights(html);
-        const updateTime = getUpdateTime(html);
-        const message = formatMessage(flightInfos, updateTime);
-        await postToSlack(message);
+    program
+        .command('ana')
+        .description('ANAの運航情報を取得してSlackに通知します')
+        .action(async () => {
+            try {
+                const html = await fetchHTML(ANA_URL);
 
-        console.log('Successfully posted irregular flight information to Slack');
-    } catch (error) {
-        console.error('Error:', error);
-        process.exit(1);
-    }
+                if (!hasIrregularFlights(html)) {
+                    console.log('No irregular flights found');
+                    return;
+                }
+
+                const flightInfos = parseIrregularFlights(html);
+                const updateTime = getUpdateTime(html);
+                const message = formatMessage(flightInfos, updateTime);
+                await postToSlack(message);
+
+                console.log('Successfully posted irregular flight information to Slack');
+            } catch (error) {
+                console.error('Error:', error);
+                process.exit(1);
+            }
+        });
+
+    program.parse();
 }
 
 main();

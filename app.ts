@@ -44,14 +44,22 @@ function parseIrregularFlights(html: string): FlightInfo[] {
         const $cells = $row.find('td');
 
         if ($cells.length === 2) {
+            const firstCell = $cells.first();
+            const secondCell = $cells.last();
+
             // 地域名のセル
-            if ($cells.first().hasClass('area')) {
-                currentRegion = $cells.first().text().trim();
+            if (firstCell.hasClass('area')) {
+                currentRegion = firstCell.text().trim();
             }
-            // 空港情報のセル
-            else if ($cells.first().hasClass('area_top_line')) {
-                const airportName = $cells.first().text().trim().replace('・', '').trim();
-                const period = $cells.last().text().trim();
+            // 空港情報のセル - area_top_lineクラスの有無に関わらず、空港名を含むセルを検出
+            else if (firstCell.text().includes('・')) {
+                const airportName = firstCell.text().trim().replace('・', '').trim();
+                const period = secondCell.text().trim();
+
+                // 空の期間情報は無視
+                if (period === '&nbsp;' || period === '') {
+                    return;
+                }
 
                 // 現在の地域の情報を探すか、新しく作成
                 let regionInfo = flightInfos.find(info => info.region === currentRegion);

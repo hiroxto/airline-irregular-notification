@@ -29,7 +29,7 @@ interface State {
     flightInfos: FlightInfo[];
 }
 
-const STATE_FILE = path.join('storage', 'last_state.json');
+const STATE_FILE = path.join('storage', 'ana.json');
 
 async function loadLastState(): Promise<State | null> {
     try {

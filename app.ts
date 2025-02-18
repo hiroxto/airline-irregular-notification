@@ -180,7 +180,7 @@ function formatMessage(flightInfos: FlightInfo[], updateTime: string): { text: s
     };
 }
 
-async function postToSlack(message: { text: string; blocks: (Block | KnownBlock)[] }, options: { username?: string; icon?: string }): Promise<void> {
+async function postToSlack(message: { text: string; blocks: (Block | KnownBlock)[] }, options: { username: string; icon: string }): Promise<void> {
     const slack = new WebClient(SLACK_TOKEN);
     assert(SLACK_TOKEN && SLACK_CHANNEL);
 
@@ -189,8 +189,8 @@ async function postToSlack(message: { text: string; blocks: (Block | KnownBlock)
         text: message.text,
         blocks: message.blocks,
         mrkdwn: true,
-        username: options.username ?? '橙釦',
-        icon_emoji: options.icon ?? ':ana:'
+        username: options.username,
+        icon_emoji: options.icon
     });
 
     if (!result.ok) {

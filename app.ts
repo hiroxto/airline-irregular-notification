@@ -3,6 +3,8 @@ import { WebClient } from '@slack/web-api';
 import assert from 'assert';
 import type { Block, KnownBlock } from '@slack/web-api';
 import { Command } from 'commander';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 const SLACK_TOKEN = process.env.SLACK_TOKEN;
 const SLACK_CHANNEL = process.env.SLACK_CHANNEL;
@@ -20,6 +22,40 @@ interface FlightInfo {
         name: string;
         period: string;
     }[];
+}
+
+interface State {
+    lastCheck: string;
+    flightInfos: FlightInfo[];
+}
+
+const STATE_FILE = path.join('storage', 'last_state.json');
+
+async function loadLastState(): Promise<State | null> {
+    try {
+        const data = await fs.readFile(STATE_FILE, 'utf-8');
+        return JSON.parse(data) as State;
+    } catch (error) {
+        // ファイルが存在しない場合やJSONパースエラーの場合はnullを返す
+        return null;
+    }
+}
+
+async function saveState(state: State): Promise<void> {
+    await fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
+}
+
+function hasFlightInfosChanged(oldState: State | null, newFlightInfos: FlightInfo[]): boolean {
+    if (!oldState) return true;
+
+    // 運航情報を文字列にして比較
+    const stringifyAirports = (infos: FlightInfo[]) =>
+        JSON.stringify(infos.map(info => ({
+            ...info,
+            airports: info.airports.sort((a, b) => a.name.localeCompare(b.name))
+        })));
+
+    return stringifyAirports(oldState.flightInfos) !== stringifyAirports(newFlightInfos);
 }
 
 async function fetchHTML(url: string): Promise<string> {
@@ -175,22 +211,44 @@ async function main() {
         .description('ANAの運航情報を取得してSlackに通知します')
         .option('--icon <emoji>', 'Slackに投稿する際のアイコン絵文字', ':ana:')
         .option('--username <name>', 'Slackに投稿する際のユーザー名', 'ANA運航情報')
+        .option('--force', '強制的に通知を送信する', false)
         .action(async (options) => {
             try {
                 const html = await fetchHTML(ANA_URL);
 
                 if (!hasIrregularFlights(html)) {
                     console.log('No irregular flights found');
+                    const newState: State = {
+                        lastCheck: new Date().toISOString(),
+                        flightInfos: []
+                    };
+                    await saveState(newState);
                     return;
                 }
 
                 const flightInfos = parseIrregularFlights(html);
+                const lastState = await loadLastState();
+                const hasChanged = hasFlightInfosChanged(lastState, flightInfos);
+
+                // 変更がない場合は通知しない (ただし--forceオプションが指定されている場合は通知する)
+                if (!hasChanged && !options.force) {
+                    console.log('No changes in flight information since last check');
+                    return;
+                }
+
                 const updateTime = getUpdateTime(html);
                 const message = formatMessage(flightInfos, updateTime);
                 await postToSlack(message, {
                     icon: options.icon,
                     username: options.username
                 });
+
+                // 新しい状態を保存
+                const newState: State = {
+                    lastCheck: new Date().toISOString(),
+                    flightInfos
+                };
+                await saveState(newState);
 
                 console.log('Successfully posted irregular flight information to Slack');
             } catch (error) {

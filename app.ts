@@ -119,8 +119,8 @@ function getUpdateTime(html: string): string {
     return timeText || new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
 }
 
-function formatMessage(flightInfos: FlightInfo[], updateTime: string): { text: string; blocks: (Block | KnownBlock)[] } {
-    const headerText = `*特別な取り扱いの一覧 / <${ANA_URL}|ANA> @here*\n`;
+function formatMessage(flightInfos: FlightInfo[], updateTime: string, withMention: boolean = true): { text: string; blocks: (Block | KnownBlock)[] } {
+    const headerText = `*特別な取り扱いの一覧 / <${ANA_URL}|ANA>${withMention ? ' @here' : ''}*\n`;
     const blocks: (Block | KnownBlock)[] = [
         {
             type: 'section',
@@ -131,32 +131,42 @@ function formatMessage(flightInfos: FlightInfo[], updateTime: string): { text: s
         }
     ];
 
-    flightInfos.forEach(info => {
+    if (flightInfos.length === 0) {
         blocks.push({
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `*${info.region}*`
+                text: "現在、台風などの大幅な気象の乱れにより、今後運航への影響が予測される空港はありません。"
             }
         });
+    } else {
+        flightInfos.forEach(info => {
+            blocks.push({
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: `*${info.region}*`
+                }
+            });
 
-        // 空港情報のリスト
-        const airportList = info.airports
-            .map(airport => {
-                // 連続する空白を1つの空白に置換
-                const normalizedPeriod = airport.period.replace(/\s+/g, ' ').trim();
-                return `${airport.name}: ${normalizedPeriod}`;
-            })
-            .join('\n');
+            // 空港情報のリスト
+            const airportList = info.airports
+                .map(airport => {
+                    // 連続する空白を1つの空白に置換
+                    const normalizedPeriod = airport.period.replace(/\s+/g, ' ').trim();
+                    return `${airport.name}: ${normalizedPeriod}`;
+                })
+                .join('\n');
 
-        blocks.push({
-            type: 'section',
-            text: {
-                type: 'mrkdwn',
-                text: airportList
-            }
+            blocks.push({
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: airportList
+                }
+            });
         });
-    });
+    }
 
     // 取得日時を追加
     blocks.push(
@@ -215,19 +225,67 @@ async function main() {
         .action(async (options) => {
             try {
                 const html = await fetchHTML(ANA_URL);
+                const lastState = await loadLastState();
+                const hasIrregular = hasIrregularFlights(html);
+                const updateTime = getUpdateTime(html);
 
-                if (!hasIrregularFlights(html)) {
-                    console.log('No irregular flights found');
+                if (!hasIrregular) {
+                    // --forceオプションが指定されている場合は通常運航のメッセージを送信
+                    if (options.force) {
+                        const message = formatMessage([], updateTime, false);
+                        await postToSlack(message, {
+                            icon: options.icon,
+                            username: options.username
+                        });
+
+                        const newState: State = {
+                            lastCheck: new Date().toISOString(),
+                            flightInfos: []
+                        };
+                        await saveState(newState);
+                        console.log('Posted normal operation message (forced)');
+                        return;
+                    }
+
+                    // 前回の状態がない場合は何もしない
+                    if (!lastState) {
+                        console.log('No irregular flights found and no previous state exists');
+                        const newState: State = {
+                            lastCheck: new Date().toISOString(),
+                            flightInfos: []
+                        };
+                        await saveState(newState);
+                        return;
+                    }
+
+                    // 前回の状態がある場合、前回も空だった場合は通知しない
+                    if (lastState.flightInfos.length === 0) {
+                        console.log('No irregular flights found and previous state was also empty');
+                        const newState: State = {
+                            lastCheck: new Date().toISOString(),
+                            flightInfos: []
+                        };
+                        await saveState(newState);
+                        return;
+                    }
+
+                    // 前回は運航情報があり、今回はない場合のみ通常運航のメッセージを送信
+                    const message = formatMessage([], updateTime, false);
+                    await postToSlack(message, {
+                        icon: options.icon,
+                        username: options.username
+                    });
+
                     const newState: State = {
                         lastCheck: new Date().toISOString(),
                         flightInfos: []
                     };
                     await saveState(newState);
+                    console.log('Posted normal operation message');
                     return;
                 }
 
                 const flightInfos = parseIrregularFlights(html);
-                const lastState = await loadLastState();
                 const hasChanged = hasFlightInfosChanged(lastState, flightInfos);
 
                 // 変更がない場合は通知しない (ただし--forceオプションが指定されている場合は通知する)
@@ -236,8 +294,7 @@ async function main() {
                     return;
                 }
 
-                const updateTime = getUpdateTime(html);
-                const message = formatMessage(flightInfos, updateTime);
+                const message = formatMessage(flightInfos, updateTime, true);
                 await postToSlack(message, {
                     icon: options.icon,
                     username: options.username
@@ -250,7 +307,7 @@ async function main() {
                 };
                 await saveState(newState);
 
-                console.log('Successfully posted irregular flight information to Slack');
+                console.log(options.force ? 'Successfully posted irregular flight information to Slack (forced)' : 'Successfully posted irregular flight information to Slack');
             } catch (error) {
                 console.error('Error:', error);
                 process.exit(1);

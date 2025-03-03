@@ -120,7 +120,7 @@ function getUpdateTime(html: string): string {
 }
 
 function formatMessage(flightInfos: FlightInfo[], updateTime: string, withMention: boolean = true): { text: string; blocks: (Block | KnownBlock)[] } {
-    const headerText = `*特別な取り扱いの一覧 / <${ANA_URL}|ANA>${withMention ? ' @here' : ''}*\n`;
+    const headerText = `*特別な取り扱いの一覧 / <${ANA_URL}|ANA>* ${withMention ? ' @channel' : ''}\n`;
     const blocks: (Block | KnownBlock)[] = [
         {
             type: 'section',

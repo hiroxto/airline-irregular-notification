@@ -1,17 +1,26 @@
 {
-  "name": "airline-irregular-notification",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "Hiroto Kitazawa <hiroxto@gmail.com>",
-  "license": "MIT",
-  "dependencies": {
-    "@slack/web-api": "^7.8.0",
-    "cheerio": "^1.0.0",
-    "commander": "^13.1.0"
-  }
+    "name": "airline-irregular-notification",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "format": "biome format .",
+        "format:fix": "biome format --write .",
+        "lint": "biome lint .",
+        "lint:fix": "biome lint --write .",
+        "check": "biome check .",
+        "check:fix": "biome check --write ."
+    },
+    "keywords": [],
+    "author": "Hiroto Kitazawa <hiroxto@gmail.com>",
+    "license": "MIT",
+    "dependencies": {
+        "@slack/web-api": "^7.8.0",
+        "cheerio": "^1.0.0",
+        "commander": "^13.1.0"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^1.9.4"
+    }
 }

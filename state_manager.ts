@@ -1,5 +1,5 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 
 export interface BaseState<T> {
     lastCheck: string;
@@ -13,11 +13,11 @@ export interface StateManager<T> {
 }
 
 export const createStateManager = <T>(fileName: string): StateManager<T> => {
-    const filePath = path.join('storage', fileName);
+    const filePath = path.join("storage", fileName);
 
     const loadState = async (): Promise<BaseState<T> | null> => {
         try {
-            const data = await fs.readFile(filePath, 'utf-8');
+            const data = await fs.readFile(filePath, "utf-8");
             return JSON.parse(data) as BaseState<T>;
         } catch (error) {
             // ファイルが存在しない場合やJSONパースエラーの場合はnullを返す
@@ -26,7 +26,7 @@ export const createStateManager = <T>(fileName: string): StateManager<T> => {
     };
 
     const saveState = async (state: BaseState<T>): Promise<void> => {
-        await fs.writeFile(filePath, JSON.stringify(state, null, 2), 'utf-8');
+        await fs.writeFile(filePath, JSON.stringify(state, null, 2), "utf-8");
     };
 
     const hasStateChanged = (oldState: BaseState<T> | null, newFlightInfos: T[]): boolean => {
@@ -34,10 +34,12 @@ export const createStateManager = <T>(fileName: string): StateManager<T> => {
 
         // 運航情報を文字列にして比較
         const stringifyAirports = (infos: T[]) =>
-            JSON.stringify(infos.map(info => ({
-                ...info,
-                airports: (info as any).airports.sort((a: any, b: any) => a.name.localeCompare(b.name))
-            })));
+            JSON.stringify(
+                infos.map(info => ({
+                    ...info,
+                    airports: (info as any).airports.sort((a: any, b: any) => a.name.localeCompare(b.name)),
+                })),
+            );
 
         return stringifyAirports(oldState.flightInfos) !== stringifyAirports(newFlightInfos);
     };
@@ -45,6 +47,6 @@ export const createStateManager = <T>(fileName: string): StateManager<T> => {
     return {
         loadState,
         saveState,
-        hasStateChanged
+        hasStateChanged,
     };
 };

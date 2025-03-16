@@ -1,5 +1,5 @@
-import { WebClient } from '@slack/web-api';
-import type { Block, KnownBlock } from '@slack/web-api';
+import { WebClient } from "@slack/web-api";
+import type { Block, KnownBlock } from "@slack/web-api";
 
 export interface SlackMessage {
     text: string;
@@ -22,7 +22,7 @@ export const postToSlack = async (message: SlackMessage, options: SlackPostOptio
         blocks: message.blocks,
         mrkdwn: true,
         username: options.username,
-        icon_emoji: options.icon
+        icon_emoji: options.icon,
     });
 
     if (!result.ok) {

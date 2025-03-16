@@ -1,10 +1,10 @@
-import * as cheerio from 'cheerio';
-import { fetchHTML } from './http_client';
-import { createStateManager, BaseState } from './state_manager';
-import { SlackMessage } from './notification';
-import type { Block, KnownBlock } from '@slack/web-api';
+import type { Block, KnownBlock } from "@slack/web-api";
+import * as cheerio from "cheerio";
+import { fetchHTML } from "./http_client";
+import type { SlackMessage } from "./notification";
+import { type BaseState, createStateManager } from "./state_manager";
 
-const JAL_URL = 'https://www.jal.co.jp/cms/other/ja/info.html';
+const JAL_URL = "https://www.jal.co.jp/cms/other/ja/info.html";
 
 export interface JalFlightInfo {
     region: string;
@@ -27,7 +27,7 @@ export interface JalService {
 }
 
 export const createJalService = (): JalService => {
-    const stateManager = createStateManager<JalFlightInfo>('jal.json');
+    const stateManager = createStateManager<JalFlightInfo>("jal.json");
 
     const hasIrregularFlights = (html: string): boolean => {
         const $ = cheerio.load(html);
@@ -39,22 +39,22 @@ export const createJalService = (): JalService => {
     const parseIrregularFlights = (html: string): JalFlightInfo[] => {
         const $ = cheerio.load(html);
         const flightInfos: JalFlightInfo[] = [];
-        let currentRegion = '';
+        let currentRegion = "";
 
         // 英語版のセクションを除外するため、id="en"より前のテーブルのみを対象とする
-        $('.table_typeB_01 table').each((_, table) => {
+        $(".table_typeB_01 table").each((_, table) => {
             const $table = $(table);
             // 英語版のセクション内のテーブルは除外
-            if ($table.closest('#en').length > 0) {
+            if ($table.closest("#en").length > 0) {
                 return;
             }
 
-            const region = $table.find('thead th').first().text().trim();
+            const region = $table.find("thead th").first().text().trim();
             currentRegion = region;
 
-            const airports: { name: string; date: string; content: string; }[] = [];
-            $table.find('tbody tr').each((_, row) => {
-                const $cells = $(row).find('td');
+            const airports: { name: string; date: string; content: string }[] = [];
+            $table.find("tbody tr").each((_, row) => {
+                const $cells = $(row).find("td");
                 if ($cells.length === 3) {
                     const name = $cells.eq(0).text().trim();
                     const date = $cells.eq(1).text().trim();
@@ -67,7 +67,7 @@ export const createJalService = (): JalService => {
             if (airports.length > 0) {
                 flightInfos.push({
                     region: currentRegion,
-                    airports
+                    airports,
                 });
             }
         });
@@ -77,73 +77,73 @@ export const createJalService = (): JalService => {
 
     const getUpdateTime = (html: string): string => {
         const $ = cheerio.load(html);
-        const timeText = $('.alR').first().text().trim();
-        return timeText || new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+        const timeText = $(".alR").first().text().trim();
+        return timeText || new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
     };
 
-    const formatMessage = (flightInfos: JalFlightInfo[], updateTime: string, withMention: boolean = true): SlackMessage => {
-        const headerText = `*特別な取り扱い対象空港の一覧 / <${JAL_URL}|JAL>* ${withMention ? ' @channel' : ''}\n`;
+    const formatMessage = (flightInfos: JalFlightInfo[], updateTime: string, withMention = true): SlackMessage => {
+        const headerText = `*特別な取り扱い対象空港の一覧 / <${JAL_URL}|JAL>* ${withMention ? " @channel" : ""}\n`;
         const blocks: (Block | KnownBlock)[] = [
             {
-                type: 'section',
+                type: "section",
                 text: {
-                    type: 'mrkdwn',
-                    text: headerText
-                }
-            }
+                    type: "mrkdwn",
+                    text: headerText,
+                },
+            },
         ];
 
         if (flightInfos.length === 0) {
             blocks.push({
-                type: 'section',
+                type: "section",
                 text: {
-                    type: 'mrkdwn',
-                    text: "現在、対象空港はございません"
-                }
+                    type: "mrkdwn",
+                    text: "現在、対象空港はございません",
+                },
             });
         } else {
-            flightInfos.forEach(info => {
+            for (const info of flightInfos) {
                 blocks.push({
-                    type: 'section',
+                    type: "section",
                     text: {
-                        type: 'mrkdwn',
-                        text: `*${info.region}*`
-                    }
+                        type: "mrkdwn",
+                        text: `*${info.region}*`,
+                    },
                 });
 
                 // 空港情報のリスト
                 const airportList = info.airports
                     .map(airport => `${airport.name}: ${airport.date} - ${airport.content}`)
-                    .join('\n');
+                    .join("\n");
 
                 blocks.push({
-                    type: 'section',
+                    type: "section",
                     text: {
-                        type: 'mrkdwn',
-                        text: airportList
-                    }
+                        type: "mrkdwn",
+                        text: airportList,
+                    },
                 });
-            });
+            }
         }
 
         // 取得日時を追加
         blocks.push({
-            type: 'divider',
-            block_id: 'divider'
+            type: "divider",
+            block_id: "divider",
         });
         blocks.push({
-            type: 'context',
+            type: "context",
             elements: [
                 {
-                    type: 'mrkdwn',
-                    text: updateTime
-                }
-            ]
+                    type: "mrkdwn",
+                    text: updateTime,
+                },
+            ],
         });
 
         return {
             text: headerText,
-            blocks
+            blocks,
         };
     };
 
@@ -159,6 +159,6 @@ export const createJalService = (): JalService => {
         loadState: stateManager.loadState,
         saveState: stateManager.saveState,
         hasStateChanged: stateManager.hasStateChanged,
-        fetchFlightInfo
+        fetchFlightInfo,
     };
 };

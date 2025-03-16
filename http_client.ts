@@ -10,17 +10,17 @@ export async function fetchHTML(url: string): Promise<string> {
                 "cache-control": "no-cache",
                 pragma: "no-cache",
                 priority: "u=0, i",
-                "sec-ch-ua": "\"Not:A-Brand\";v=\"24\", \"Chromium\";v=\"134\"",
+                "sec-ch-ua": '"Not:A-Brand";v="24", "Chromium";v="134"',
                 "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": "\"macOS\"",
+                "sec-ch-ua-platform": '"macOS"',
                 "sec-fetch-dest": "document",
                 "sec-fetch-mode": "navigate",
                 "sec-fetch-site": "none",
                 "sec-fetch-user": "?1",
-                "upgrade-insecure-requests": "1"
+                "upgrade-insecure-requests": "1",
             },
             referrerPolicy: "strict-origin-when-cross-origin",
-            signal: controller.signal
+            signal: controller.signal,
         });
 
         if (!response.ok) {

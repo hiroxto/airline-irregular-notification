@@ -5,9 +5,12 @@
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "format": "biome format --write .",
+        "format": "biome format .",
+        "format:fix": "biome format --write .",
         "lint": "biome lint .",
-        "check": "biome check --write ."
+        "lint:fix": "biome lint --write .",
+        "check": "biome check .",
+        "check:fix": "biome check --write ."
     },
     "keywords": [],
     "author": "Hiroto Kitazawa <hiroxto@gmail.com>",

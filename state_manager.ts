@@ -1,18 +1,27 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-export interface BaseState<T> {
+export interface BaseAirportInfo {
+    name: string;
+}
+
+export interface BaseFlightInfo {
+    region: string;
+    airports: BaseAirportInfo[];
+}
+
+export interface BaseState<T extends BaseFlightInfo> {
     lastCheck: string;
     flightInfos: T[];
 }
 
-export interface StateManager<T> {
+export interface StateManager<T extends BaseFlightInfo> {
     loadState: () => Promise<BaseState<T> | null>;
     saveState: (state: BaseState<T>) => Promise<void>;
     hasStateChanged: (oldState: BaseState<T> | null, newFlightInfos: T[]) => boolean;
 }
 
-export const createStateManager = <T>(fileName: string): StateManager<T> => {
+export const createStateManager = <T extends BaseFlightInfo>(fileName: string): StateManager<T> => {
     const filePath = path.join("storage", fileName);
 
     const loadState = async (): Promise<BaseState<T> | null> => {
@@ -37,7 +46,7 @@ export const createStateManager = <T>(fileName: string): StateManager<T> => {
             JSON.stringify(
                 infos.map(info => ({
                     ...info,
-                    airports: (info as any).airports.sort((a: any, b: any) => a.name.localeCompare(b.name)),
+                    airports: info.airports.sort((a, b) => a.name.localeCompare(b.name)),
                 })),
             );
 

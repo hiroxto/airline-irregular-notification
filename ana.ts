@@ -2,16 +2,18 @@ import type { Block, KnownBlock } from "@slack/web-api";
 import * as cheerio from "cheerio";
 import { fetchHTML } from "./http_client";
 import type { SlackMessage } from "./notification";
-import { type BaseState, createStateManager } from "./state_manager";
+import { type BaseAirportInfo, type BaseFlightInfo, type BaseState, createStateManager } from "./state_manager";
 
 const ANA_URL = "https://www.ana.co.jp/asw/ncf_info";
 
-export interface AnaFlightInfo {
+export interface AnaAirportInfo extends BaseAirportInfo {
+    name: string;
+    period: string;
+}
+
+export interface AnaFlightInfo extends BaseFlightInfo {
     region: string;
-    airports: {
-        name: string;
-        period: string;
-    }[];
+    airports: AnaAirportInfo[];
 }
 
 export interface AnaService {

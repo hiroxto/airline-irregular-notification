@@ -2,17 +2,19 @@ import type { Block, KnownBlock } from "@slack/web-api";
 import * as cheerio from "cheerio";
 import { fetchHTML } from "./http_client";
 import type { SlackMessage } from "./notification";
-import { type BaseState, createStateManager } from "./state_manager";
+import { type BaseAirportInfo, type BaseFlightInfo, type BaseState, createStateManager } from "./state_manager";
 
 const JAL_URL = "https://www.jal.co.jp/cms/other/ja/info.html";
 
-export interface JalFlightInfo {
+export interface JalAirportInfo extends BaseAirportInfo {
+    name: string;
+    date: string;
+    content: string;
+}
+
+export interface JalFlightInfo extends BaseFlightInfo {
     region: string;
-    airports: {
-        name: string;
-        date: string;
-        content: string;
-    }[];
+    airports: JalAirportInfo[];
 }
 
 export interface JalService {

@@ -57,13 +57,13 @@ export const createAnaService = (): AnaService => {
                 if (firstCell.hasClass("area")) {
                     currentRegion = firstCell.text().trim();
                 }
-                // 空港情報のセル
-                else if (firstCell.text().includes("・")) {
-                    const airportName = firstCell.text().trim().replace("・", "").trim();
-                    const period = secondCell.text().trim();
+                // 空港情報のセル（新しいHTML構造に対応）
+                else if (firstCell.hasClass("area_top_line")) {
+                    const airportName = firstCell.text().trim().replace("・", "").replace(/\s+/g, " ").trim();
+                    const period = secondCell.text().trim().replace(/\s+/g, " ");
 
                     // 空の期間情報は無視
-                    if (period === "&nbsp;" || period === "") {
+                    if (period === "&nbsp;" || period === "" || !period) {
                         return;
                     }
 

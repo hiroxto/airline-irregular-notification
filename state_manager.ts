@@ -50,7 +50,9 @@ export const createStateManager = <T extends BaseFlightInfo>(fileName: string): 
                 })),
             );
 
-        return stringifyAirports(oldState.flightInfos) !== stringifyAirports(newFlightInfos);
+        return (
+            stringifyAirports(oldState.flightInfos) !== stringifyAirports(JSON.parse(JSON.stringify(newFlightInfos)))
+        );
     };
 
     return {

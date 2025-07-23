@@ -56,9 +56,11 @@ export const createAnaService = (): AnaService => {
                 // 地域名のセル
                 if (firstCell.hasClass("area")) {
                     currentRegion = firstCell.text().trim();
+                    return;
                 }
-                // 空港情報のセル（新しいHTML構造に対応）
-                else if (firstCell.hasClass("area_top_line")) {
+
+                // areaがない場合は，地域名が入らず空港情報が入る
+                if (!firstCell.hasClass("area")) {
                     const airportName = firstCell.text().trim().replace("・", "").replace(/\s+/g, " ").trim();
                     const period = secondCell.text().trim().replace(/\s+/g, " ");
 

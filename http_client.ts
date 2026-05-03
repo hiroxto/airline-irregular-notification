@@ -1,6 +1,9 @@
+import { getConfig } from "./config";
+
 export async function fetchHTML(url: string): Promise<string> {
     const maxRetries = 3;
     const retryDelay = 1000; // 1秒
+    const config = getConfig();
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         const controller = new AbortController();
@@ -9,8 +12,7 @@ export async function fetchHTML(url: string): Promise<string> {
         try {
             const response = await fetch(url, {
                 headers: {
-                    "user-agent":
-                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+                    "user-agent": config.userAgent,
                     accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
                     "accept-encoding": "gzip, deflate, br, zstd",
                     "accept-language": "ja,en-US;q=0.9,en;q=0.8",

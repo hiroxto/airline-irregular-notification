@@ -1,17 +1,11 @@
 import { Command } from "commander";
 import { createAnaService } from "./ana";
+import { getConfig } from "./config";
 import { createJalService } from "./jal";
 import { postToSlack } from "./notification";
 
-const SLACK_TOKEN = process.env.SLACK_TOKEN;
-const SLACK_CHANNEL = process.env.SLACK_CHANNEL;
-
-if (typeof SLACK_TOKEN !== "string" || typeof SLACK_CHANNEL !== "string") {
-    console.error("Error: SLACK_TOKEN and SLACK_CHANNEL must be set in environment variables");
-    process.exit(1);
-}
-
 async function main() {
+    const config = getConfig();
     const program = new Command();
 
     program
@@ -40,8 +34,8 @@ async function main() {
                         await postToSlack(message, {
                             icon: options.icon,
                             username: options.username,
-                            token: SLACK_TOKEN,
-                            channel: SLACK_CHANNEL,
+                            token: config.slackToken,
+                            channel: config.slackChannel,
                         });
 
                         const newState = {
@@ -80,8 +74,8 @@ async function main() {
                     await postToSlack(message, {
                         icon: options.icon,
                         username: options.username,
-                        token: SLACK_TOKEN,
-                        channel: SLACK_CHANNEL,
+                        token: config.slackToken,
+                        channel: config.slackChannel,
                     });
 
                     const newState = {
@@ -106,8 +100,8 @@ async function main() {
                 await postToSlack(message, {
                     icon: options.icon,
                     username: options.username,
-                    token: SLACK_TOKEN,
-                    channel: SLACK_CHANNEL,
+                    token: config.slackToken,
+                    channel: config.slackChannel,
                 });
 
                 // 新しい状態を保存
@@ -149,8 +143,8 @@ async function main() {
                         await postToSlack(message, {
                             icon: options.icon,
                             username: options.username,
-                            token: SLACK_TOKEN,
-                            channel: SLACK_CHANNEL,
+                            token: config.slackToken,
+                            channel: config.slackChannel,
                         });
 
                         const newState = {
@@ -189,8 +183,8 @@ async function main() {
                     await postToSlack(message, {
                         icon: options.icon,
                         username: options.username,
-                        token: SLACK_TOKEN,
-                        channel: SLACK_CHANNEL,
+                        token: config.slackToken,
+                        channel: config.slackChannel,
                     });
 
                     const newState = {
@@ -215,8 +209,8 @@ async function main() {
                 await postToSlack(message, {
                     icon: options.icon,
                     username: options.username,
-                    token: SLACK_TOKEN,
-                    channel: SLACK_CHANNEL,
+                    token: config.slackToken,
+                    channel: config.slackChannel,
                 });
 
                 // 新しい状態を保存
@@ -240,4 +234,7 @@ async function main() {
     program.parse();
 }
 
-main();
+main().catch(error => {
+    console.error("Error:", error);
+    process.exit(1);
+});

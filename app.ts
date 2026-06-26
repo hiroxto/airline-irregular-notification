@@ -3,6 +3,7 @@ import { createAnaService } from "./ana";
 import { getConfig } from "./config";
 import { createJalService } from "./jal";
 import { postToSlack } from "./notification";
+import { createSkymarkService } from "./skymark";
 
 async function main() {
     const config = getConfig();
@@ -219,6 +220,115 @@ async function main() {
                     flightInfos,
                 };
                 await jalService.saveState(newState);
+
+                console.log(
+                    options.force
+                        ? "Successfully posted irregular flight information to Slack (forced)"
+                        : "Successfully posted irregular flight information to Slack",
+                );
+            } catch (error) {
+                console.error("Error:", error);
+                process.exit(1);
+            }
+        });
+
+    program
+        .command("skymark")
+        .description("スカイマークの運航情報を取得してSlackに通知します")
+        .option("--icon <emoji>", "Slackに投稿する際のアイコン絵文字", ":skymark:")
+        .option("--username <name>", "Slackに投稿する際のユーザー名", "スカイマーク運航情報")
+        .option("--force", "強制的に通知を送信する", false)
+        .action(async options => {
+            try {
+                const skymarkService = createSkymarkService();
+                const html = await skymarkService.fetchFlightInfo();
+                const lastState = await skymarkService.loadState();
+                const hasIrregular = skymarkService.hasIrregularFlights(html);
+                const updateTime = skymarkService.getUpdateTime(html);
+
+                if (!hasIrregular) {
+                    // --forceオプションが指定されている場合は通常運航のメッセージを送信
+                    if (options.force) {
+                        const message = skymarkService.formatMessage([], updateTime, false);
+                        await postToSlack(message, {
+                            icon: options.icon,
+                            username: options.username,
+                            token: config.slackToken,
+                            channel: config.slackChannel,
+                        });
+
+                        const newState = {
+                            lastCheck: new Date().toISOString(),
+                            flightInfos: [],
+                        };
+                        await skymarkService.saveState(newState);
+                        console.log("Posted normal operation message (forced)");
+                        return;
+                    }
+
+                    // 前回の状態がない場合は何もしない
+                    if (!lastState) {
+                        console.log("No irregular flights found and no previous state exists");
+                        const newState = {
+                            lastCheck: new Date().toISOString(),
+                            flightInfos: [],
+                        };
+                        await skymarkService.saveState(newState);
+                        return;
+                    }
+
+                    // 前回の状態がある場合、前回も空だった場合は通知しない
+                    if (lastState.flightInfos.length === 0) {
+                        console.log("No irregular flights found and previous state was also empty");
+                        const newState = {
+                            lastCheck: new Date().toISOString(),
+                            flightInfos: [],
+                        };
+                        await skymarkService.saveState(newState);
+                        return;
+                    }
+
+                    // 前回は運航情報があり、今回はない場合のみ通常運航のメッセージを送信
+                    const message = skymarkService.formatMessage([], updateTime, false);
+                    await postToSlack(message, {
+                        icon: options.icon,
+                        username: options.username,
+                        token: config.slackToken,
+                        channel: config.slackChannel,
+                    });
+
+                    const newState = {
+                        lastCheck: new Date().toISOString(),
+                        flightInfos: [],
+                    };
+                    await skymarkService.saveState(newState);
+                    console.log("Posted normal operation message");
+                    return;
+                }
+
+                const flightInfos = skymarkService.parseIrregularFlights(html);
+                const hasChanged = skymarkService.hasStateChanged(lastState, flightInfos);
+
+                // 変更がない場合は通知しない (ただし--forceオプションが指定されている場合は通知する)
+                if (!hasChanged && !options.force) {
+                    console.log("No changes in flight information since last check");
+                    return;
+                }
+
+                const message = skymarkService.formatMessage(flightInfos, updateTime, true);
+                await postToSlack(message, {
+                    icon: options.icon,
+                    username: options.username,
+                    token: config.slackToken,
+                    channel: config.slackChannel,
+                });
+
+                // 新しい状態を保存
+                const newState = {
+                    lastCheck: new Date().toISOString(),
+                    flightInfos,
+                };
+                await skymarkService.saveState(newState);
 
                 console.log(
                     options.force

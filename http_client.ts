@@ -1,6 +1,23 @@
 import { getConfig } from "./config";
 
+export interface FetchHTMLResult {
+    html: string;
+    redirected: boolean;
+    url: string;
+    status: number;
+    location: string | null;
+}
+
+export interface FetchHTMLOptions {
+    redirect?: RequestRedirect;
+}
+
 export async function fetchHTML(url: string): Promise<string> {
+    const result = await fetchHTMLWithMetadata(url);
+    return result.html;
+}
+
+export async function fetchHTMLWithMetadata(url: string, options: FetchHTMLOptions = {}): Promise<FetchHTMLResult> {
     const maxRetries = 3;
     const retryDelay = 1000; // 1秒
     const config = getConfig();
@@ -28,14 +45,34 @@ export async function fetchHTML(url: string): Promise<string> {
                     "upgrade-insecure-requests": "1",
                 },
                 referrerPolicy: "strict-origin-when-cross-origin",
+                redirect: options.redirect ?? "follow",
                 signal: controller.signal,
             });
+
+            const redirected =
+                response.redirected || (response.status >= 300 && response.status < 400) || response.url !== url;
+
+            if (redirected && options.redirect === "manual") {
+                return {
+                    html: "",
+                    redirected: true,
+                    url: response.url,
+                    status: response.status,
+                    location: response.headers.get("location"),
+                };
+            }
 
             if (!response.ok) {
                 throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
             }
 
-            return await response.text();
+            return {
+                html: await response.text(),
+                redirected,
+                url: response.url,
+                status: response.status,
+                location: response.headers.get("location"),
+            };
         } catch (error) {
             clearTimeout(timeout);
 

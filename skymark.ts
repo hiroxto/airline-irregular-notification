@@ -1,6 +1,6 @@
 import type { Block, KnownBlock } from "@slack/web-api";
 import * as cheerio from "cheerio";
-import { fetchHTML } from "./http_client";
+import { fetchHTMLWithMetadata } from "./http_client";
 import type { SlackMessage } from "./notification";
 import { type BaseAirportInfo, type BaseFlightInfo, type BaseState, createStateManager } from "./state_manager";
 
@@ -149,7 +149,8 @@ export const createSkymarkService = (): SkymarkService => {
     };
 
     const fetchFlightInfo = async (): Promise<string> => {
-        return await fetchHTML(SKYMARK_URL);
+        const result = await fetchHTMLWithMetadata(SKYMARK_URL, { redirect: "manual" });
+        return result.redirected ? "" : result.html;
     };
 
     return {

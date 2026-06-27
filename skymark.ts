@@ -74,7 +74,7 @@ export const createSkymarkService = (): SkymarkService => {
     };
 
     const hasIrregularFlights = (html: string): boolean => {
-        // TODO: 通常運航時のHTMLが入手できたら、通常文言の検出条件を追加する。
+        // 対象URLがリダイレクトされた場合、fetchFlightInfo は空文字を返すため通常状態として扱う。
         return parseIrregularFlights(html).length > 0;
     };
 

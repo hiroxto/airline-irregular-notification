@@ -1,2 +1,34 @@
 [tools]
 bun = "1.4.4"
+
+[tasks.setup]
+description = ".envの作成と依存関係のインストールを行う"
+depends = ["setup:env", "install"]
+
+[tasks."setup:env"]
+description = ".env.exampleをコピーして.envを作成する。.envが存在する場合は何もしない"
+run = "test -f .env || cp .env.example .env"
+
+[tasks.install]
+description = "依存関係をインストールする"
+run = "bun install --frozen-lockfile"
+
+[tasks.start]
+description = "アプリを実行する"
+run = "bun run app.ts"
+
+[tasks."start:ana"]
+description = "ANAの運航情報を取得してSlackに通知する"
+run = "bun run app.ts ana"
+
+[tasks."start:jal"]
+description = "JALの運航情報を取得してSlackに通知する"
+run = "bun run app.ts jal"
+
+[tasks."start:skymark"]
+description = "スカイマークの運航情報を取得してSlackに通知する"
+run = "bun run app.ts skymark"
+
+[tasks."start:help"]
+description = "アプリのヘルプを表示する"
+run = "bun run app.ts help"

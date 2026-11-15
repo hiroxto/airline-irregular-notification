@@ -11,11 +11,19 @@ mise trust
 mise install
 ```
 
-依存関係をインストールする。
+`.env.example` をコピーして `.env` を作成し、依存関係をインストールする。`.env` が既に存在する場合は、`.env` を上書きしない。
 
 ```bash
-bun install
+mise run setup
 ```
+
+実行後、`.env` に各環境変数の値を記載する。
+
+| 環境変数 | 内容 |
+| --- | --- |
+| `SLACK_TOKEN` | Slack のトークン |
+| `SLACK_CHANNEL` | 通知先の Slack チャンネル |
+| `USER_AGENT` | 運航情報の取得時に送信する User-Agent |
 
 ## License
 
